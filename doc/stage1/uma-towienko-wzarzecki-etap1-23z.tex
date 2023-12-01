@@ -40,34 +40,21 @@
 
 
 \begin{document}
-	\maketitle
 	
-	\lstdefinestyle{code}{
-		language=MATLAB,
-		numbers=left,
-		stepnumber=1,
-		numbersep=10pt,
-		tabsize=4,
-		showspaces=false,
-		showstringspaces=false
-	}
-	
-	
-	\lstset{basicstyle=\small,style=code}
+\maketitle	
 
 
-\section{Cel projektu}\
+\section{Cel projektu}
 
 Celem projektu jest implementacja zmodyfikowanej wersji algorytmu generowania lasu losowego, w której do generowania kolejnych drzew losowane są częściej elementy ze zbioru uczącego, na których dotychczasowy model się mylił.
 
+Istotą metody lasu losowego w problemach regresji i klasyfikacji jest redukcja wariancji i nadmiernego dopasowania osiąganego przez pojedyncze drzewa decyzyjne. W klasycznych algorytmach generowania lasu losowego każde z $B$ drzew generowane jest na podstawie $\sqrt{B}$ przykładów ze zbioru trenującego wylosowanych ze zwracaniem, zazwyczaj ograniczonych (w problemach klasyfikacji) do $\sqrt{|D|}$ atrybutów wylosowanych bez zwracania, gdzie $D$ jest zbiorem atrybutów. Proces ten odbywa się w jednej iteracji - algorytm kończy pracę po wygenerowaniu $B$ drzew. Taka koncepcja to tzw. \textit{bagging}, który ma na celu ograniczenie wariancji modelu po przez agreację wielu prostszych modeli - w tym przypadku drzew decyzyjnych.
 
-Istotą metody lasu losowego w problemach regresji i klasyfikacji jest redukcja wariancji i nadmiernego dopasowania osiąganego przez pojedyncze drzewa decyzyjne. W klasycznych algorytmach generowania lasu losowego każde z $B$ drzew generowane jest na podstawie $\sqrt{B}$ przykładów ze zbioru trenującego wylosowanych ze zwracaniem, zazwyczaj ograniczonych (w problemach klasyfikacji) do $\sqrt{|D|}$ atrybutów wylosowanych bez zwracania, gdzie $D$ jest zbiorem atrybutów. Proces ten odbywa się w jednej iteracji - algorytm kończy pracę po wygenerowaniu $B$ drzew. Taka koncepcja to tzw bagging, który ma na celu ograniczenie wariancji modelu po przez agreację wielu prostszych modeli - w tym przypadku drzew decyzyjnych.
-
-Realizowany projekt zakłada zbadanie jak sprawdzą się metody boostingu oraz stacking. Wdrożenie metod boostingowych polega na uwzględnianiu błędów poprzedniego drzwewa decyzyjnego, przy budowanie kolejnego. Natomisat stacking zakłada utworznie nowego datasetu na bazie wyników wytrenowangeo modelu oraz wytrenowanie na nowym zbiorze metamodelu.
+Realizowany projekt zakłada zbadanie możliwości zastosowania metod \textit{boostingu} oraz \textit{stackingu}. Wdrożenie metod boostingowych polega na uwzględnianiu błędów poprzedniego drzwewa decyzyjnego, przy budowanie kolejnego. W takim podejściu nowe drzewa są nieustannie dołączane są do istniejącego już lasu. Natomiast stacking zakłada utworzenie nowego zbioru danych na bazie wyników wytrenowanego modelu oraz wytrenowanie na nowym zbiorze \textit{metamodelu}. Co istotne, w podejściu stackingowym las wygenerowany w iteracji $n+1$ w pełni zastępuje las z iteracji $n$.
 
 \section{Opis algorytmu}
 
-
+Algorytm korzystający z boostingu - kolejne drzewa dołączane są cały czas do tego samego zbioru:
 
 \begin{algorithm}[h]
 	\caption{Boosted Random Forest}\label{alg:caprf_train}
@@ -94,7 +81,7 @@ Realizowany projekt zakłada zbadanie jak sprawdzą się metody boostingu oraz s
 \end{algorithmic}
 \end{algorithm}
 
-
+Algorytm korzystający ze stackingu:
 
 
 \begin{algorithm}[H]
@@ -124,6 +111,8 @@ Realizowany projekt zakłada zbadanie jak sprawdzą się metody boostingu oraz s
     \end{algorithmic}
 \end{algorithm}
 
+Predykcja za pomocą wygenerowanych lasów losowych - bez różnic względem podejścia klasycznego:
+
 \begin{algorithm}
 \caption{PredictRandomForest}\label{alg:rf_predict}
 \hspace*{\algorithmicindent} \textbf{Input}: $x$: wektor wejściowy, $F$: nauczony las losowy
@@ -137,7 +126,7 @@ Realizowany projekt zakłada zbadanie jak sprawdzą się metody boostingu oraz s
 \end{algorithm}
 
 \section{Planowane eksperymenty}\
-Planujemy porównać:
+Planujemy porównać efektywność następujących podejść:
 
 \begin{itemize}
     \item klasyczny Random Forest
