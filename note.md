@@ -36,3 +36,15 @@
 - **#3 compare depth**
 - motivation - improve accuracy by learning errors of predecesor
 - **#0 compare to classic RF**
+
+#### conclusions
+**Boosted RF**
+- high risk of overfitting
+- RF has advantage over Boosted RF by using bagging
+
+**Iterative RF**
+- underrepresentation of correct predictions
+
+**Stacked RF**
+- need for diversity of estimatorty in layer 1 (not only RFs)
+- again overfitting
