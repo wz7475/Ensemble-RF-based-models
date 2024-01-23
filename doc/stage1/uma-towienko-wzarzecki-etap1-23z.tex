@@ -1,0 +1,147 @@
+% !TeX spellcheck = pl_PL
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{geometry}
+\geometry{
+	a4paper,
+	total={170mm,257mm},
+	left=20mm,
+	top=20mm,
+}
+
+\usepackage{mathtools}
+\usepackage{polski}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{csvsimple}
+\usepackage{geometry}
+\usepackage{siunitx}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{hyperref}
+
+
+
+\captionsetup[table]{skip=10pt}
+
+\sisetup{round-mode=places, round-precision=3, round-integer-to-decimal, scientific-notation = true, table-format = 1.3e2, table-number-alignment=center, group-separator={,}}
+
+
+\title{Uczenie Maszynowe - projekt}
+\author{Tomasz Owienko \and Wojciech Zarzecki}
+\date{18.11.2023}
+
+
+\begin{document}
+	
+\maketitle	
+
+
+\section{Cel projektu}
+
+Celem projektu jest implementacja zmodyfikowanej wersji algorytmu generowania lasu losowego, w której do generowania kolejnych drzew losowane są częściej elementy ze zbioru uczącego, na których dotychczasowy model się mylił.
+
+Istotą metody lasu losowego w problemach regresji i klasyfikacji jest redukcja wariancji i nadmiernego dopasowania osiąganego przez pojedyncze drzewa decyzyjne. W klasycznych algorytmach generowania lasu losowego każde z $B$ drzew generowane jest na podstawie $\sqrt{B}$ przykładów ze zbioru trenującego wylosowanych ze zwracaniem, zazwyczaj ograniczonych (w problemach klasyfikacji) do $\sqrt{|D|}$ atrybutów wylosowanych bez zwracania, gdzie $D$ jest zbiorem atrybutów. Proces ten odbywa się w jednej iteracji - algorytm kończy pracę po wygenerowaniu $B$ drzew. Taka koncepcja to tzw. \textit{bagging}, który ma na celu ograniczenie wariancji modelu po przez agreację wielu prostszych modeli - w tym przypadku drzew decyzyjnych.
+
+Realizowany projekt zakłada zbadanie możliwości zastosowania metod \textit{boostingu} oraz \textit{stackingu}. Wdrożenie metod boostingowych polega na uwzględnianiu błędów poprzedniego drzwewa decyzyjnego, przy budowanie kolejnego. W takim podejściu nowe drzewa są nieustannie dołączane są do istniejącego już lasu. Natomiast stacking zakłada utworzenie nowego zbioru danych na bazie wyników wytrenowanego modelu oraz wytrenowanie na nowym zbiorze \textit{metamodelu}. Co istotne, w podejściu stackingowym las wygenerowany w iteracji $n+1$ w pełni zastępuje las z iteracji $n$.
+
+\section{Opis algorytmu}
+
+Algorytm korzystający z boostingu - kolejne drzewa dołączane są cały czas do tego samego zbioru:
+
+\begin{algorithm}[h]
+	\caption{Boosted Random Forest}\label{alg:caprf_train}
+	\hspace*{\algorithmicindent} \textbf{Input}: $U\neq \emptyset$: zbiór przykładów trenujących, $C$: klasy przykładów, $D$: zbiór atrybutów wejściowych
+\begin{algorithmic}
+	\State 	// przy założeniu, że każda iteracja to nowy las
+	\State $F \gets \emptyset$
+	\State $\hat C \gets \emptyset$
+	\For{$i \gets 1$ to $N$} 
+		\State $F_i \gets \emptyset$
+		\For{$b \gets 1$ to $B$} 
+			\State $U_b \gets $B elementów wylosowanych z $U$ z preferencją dla $\{u_j \in U: \hat C(u_j) \neq C(u_j)\}$
+			\State $D_b \gets \sqrt{|D|} $ atrybutów wylosowanych z $D$ bez zwracania
+			\State $f_b \gets $ drzewo decyzyjne wygenerowane na podstawie $C$, $U_b$ i $D_b$
+			\State $F_i \gets F_i \cup \{f_b\}$
+		\EndFor
+		\State $F \gets $ las losowy $F$ ulepszony za pomocą $F_i$
+		\For{$u \in U$}
+			\State $\hat C \gets \hat C\ \cup$ PredictRandomForest($u$, $F$)
+		\EndFor
+		
+	\EndFor
+	\State \Return $F$
+\end{algorithmic}
+\end{algorithm}
+
+Algorytm korzystający ze stackingu:
+
+
+\begin{algorithm}[H]
+    \caption{Stacked Random Forest with Iterative Retraining}\label{alg:iterative_stacked_rf}
+    \hspace*{\algorithmicindent} \textbf{Input}: $U\neq \emptyset$: zbiór przykładów trenujących, $C$: klasy przykładów, $D$: zbiór atrybutów wejściowych
+    \begin{algorithmic}
+        \State $OriginalData \gets U$
+        \For{$m \gets 1$ to $M$}
+            \State // Trenowanie N niezależnych lasów losowych
+            \State $Forests \gets \emptyset$
+            \For{$i \gets 1$ to $N$}
+                \State $F_i \gets $ RandomForest($OriginalData, C, D$)
+                \State $Forests \gets Forests \cup \{F_i\}$
+            \EndFor
+            \State // Tworzenie nowego zestawu danych na podstawie wyników lasów
+            \State $NewData \gets \emptyset$
+            \For{$u \in OriginalData$}
+                \State $Results \gets []$
+                \For{$F_i \in Forests$}
+                    \State $Results \gets Results\ \cup$ PredictRandomForest($u, F_i$)
+                \EndFor
+                \State $NewData \gets NewData\ \cup \{(Results, C(u))\}$
+            \EndFor
+            \State $OriginalData \gets NewData$
+        \EndFor
+        \State \Return $Forests$
+    \end{algorithmic}
+\end{algorithm}
+
+Predykcja za pomocą wygenerowanych lasów losowych - bez różnic względem podejścia klasycznego:
+
+\begin{algorithm}
+\caption{PredictRandomForest}\label{alg:rf_predict}
+\hspace*{\algorithmicindent} \textbf{Input}: $x$: wektor wejściowy, $F$: nauczony las losowy
+\begin{algorithmic}[H]
+	\State $\hat C \gets \emptyset$
+	\For{$f_b \in F$} 
+		\State $\hat C \gets \hat C \cup {f_b(x)}$
+	\EndFor
+	\State \Return najczęstsza klasa z $\hat C$
+\end{algorithmic}
+\end{algorithm}
+
+\section{Planowane eksperymenty}\
+Planujemy porównać efektywność następujących podejść:
+
+\begin{itemize}
+    \item klasyczny Random Forest
+    \item Boosted Random Forest
+    \item Stacked Random Forest
+    \item połącznie Stacked RF i Boosted RF
+\end{itemize}
+
+
+\section{Wykorzystywane zbiory danych}
+\begin{itemize}
+    \item \href{https://archive.ics.uci.edu/ml/datasets/Mushroom}{UCI Mushrooms Dataset}
+    \item \href{https://archive.ics.uci.edu/ml/datasets/Breast+Cancer}{UCI Breast Cancer Dataset}
+    \item \href{https://www.kaggle.com/datasets/vinicius150987/titanic3}{Titanic Dataset on Kaggle}
+\end{itemize}
+
+
+\end{document}
