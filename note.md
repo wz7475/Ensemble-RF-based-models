@@ -42,9 +42,12 @@
 - high risk of overfitting
 - RF has advantage over Boosted RF by using bagging
 
-**Iterative RF**
+**Iterative (class-based) RF**
 - underrepresentation of correct predictions
 
 **Stacked RF**
 - need for diversity of estimatorty in layer 1 (not only RFs)
 - again overfitting
+
+**Iterative (sample-based)** RF
+- moves precision/recall tradeoff
